@@ -902,6 +902,64 @@ def generate_strip_plot(run_id):
 
     return ax, new_df_pos, new_df_neg
 
+def get_doc_stats():
+    """
+    Calculate descriptive statistics and draw plots for documents per patient
+    """
+    df_train = pd.read_pickle(BASE_DIR_Z + 'data/backtracking/df_cc_struct_with_train_pks.pickle')
+    df_case_pp = pd.read_pickle(BASE_DIR_Z + 'data/case_30_text_ordinal_dates_swn_p2.pickle')
+    df_case_pp = df_case_pp.loc[df_case_pp.pk.isin(df_train.pk)]
+    df_stats_case = pd.DataFrame(df_case_pp[['pk', 'brcid_case', 'CN_Doc_ID']].groupby(['brcid_case']).size())
+    df_stats_case.columns = ['count']
+
+    # controls
+    df_control_pp = pd.read_pickle(BASE_DIR_Z + 'data/control_30_text_ordinal_dates_swn_p2.pickle')
+    df_control_pp = df_control_pp.loc[df_control_pp.pk.isin(df_train.pk)]
+    df_stats_control = pd.DataFrame(df_control_pp[['brcid_control', 'CN_Doc_ID']].groupby('brcid_control').size())
+    df_stats_control.columns = ['count']
+    
+    # plot docs per patient (case)
+    ax = df_stats_case['count'].plot(kind='hist', bins=30, figsize=(10, 5), fontsize=14, legend=False)
+    ax.set_title('documents/patient (case)', fontsize=16)
+    ax.set_xlabel('number of documents', fontsize=14)
+    ax.set_ylabel('number of patients', fontsize=14)
+    plt.tight_layout()
+    plt.savefig(BASE_DIR_Z + 'data/clpsych/plots/docs_per_patient_case.png')
+    plt.show()
+    
+    # plot tokens per patient (case)
+    df_case_pp['tokens'] = df_case_pp.text_case.apply(lambda x: len(x.split(' ')))
+    ax_t = df_case_pp[['pk', 'brcid_case', 'CN_Doc_ID', 'tokens']].groupby('brcid_case').sum().plot(kind='hist', bins=30, figsize=(10, 5), fontsize=14, legend=False)
+    ax_t.set_title('tokens/patient (case)', fontsize=16)
+    ax_t.set_xlabel('number of tokens', fontsize=14)
+    ax_t.set_ylabel('number of patients', fontsize=14)
+    plt.tight_layout()
+    plt.savefig(BASE_DIR_Z + 'data/clpsych/plots/tokens_per_patient_case.png')
+    plt.show()
+    
+    # plot docs per patient (control)
+    ax2 = df_stats_control['count'].plot(kind='hist', bins=30, figsize=(10, 5), fontsize=14, legend=False)
+    ax2.set_title('documents/patient (control)', fontsize=16)
+    ax2.set_xlabel('number of documents', fontsize=14)
+    ax2.set_ylabel('number of patients', fontsize=14)
+    plt.tight_layout()
+    plt.savefig(BASE_DIR_Z + 'data/clpsych/plots/docs_per_patient_control.png')
+    plt.show()
+    
+    # plot tokens per patient (control)
+    df_control_pp['tokens'] = df_control_pp.text_control.apply(lambda x: len(x.split(' ')))
+    ax_t2 = df_control_pp[['pk', 'brcid_control', 'CN_Doc_ID', 'tokens']].groupby('brcid_control').sum().plot(kind='hist', bins=30, figsize=(10, 5), fontsize=14, legend=False)
+    ax_t2.set_title('tokens/patient (control)', fontsize=16)
+    ax_t2.set_xlabel('number of tokens', fontsize=14)
+    ax_t2.set_ylabel('number of patients', fontsize=14)
+    plt.tight_layout()
+    plt.savefig(BASE_DIR_Z + 'data/clpsych/plots/tokens_per_patient_control.png')
+    plt.show()
+    
+    df_stats_case_tok = df_case_pp.groupby('brcid_case').tokens.sum().describe()
+    df_stats_control_tok = df_control_pp.groupby('brcid_control').tokens.sum().describe()
+    
+    return df_stats_case, df_stats_control, df_stats_case_tok, df_stats_control_tok
 
 if __name__ == '__main__':
     run_id = '20190418'
